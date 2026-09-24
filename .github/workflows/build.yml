@@ -1,4 +1,4 @@
-name: Build Android APK (Chapter 2 Final Solution)
+name: Build Android APK (Pure HTML5 Audio Fix)
 
 on:
   push:
@@ -31,41 +31,14 @@ jobs:
         cordova create cordova_app com.myrunplay.mayumsyka2 MayUmshka2
         rm -rf cordova_app/www/*
         cp -R www/* cordova_app/www/
+        
+        # Подставляем наш config.xml, который разрешит воспроизведение музыки!
+        if [ -f config.xml ]; then cp config.xml cordova_app/config.xml; fi
+        
         cd cordova_app
         cordova platform add android@13.0.0 --no-telemetry
       env:
         ANDROID_HOME: /usr/local/lib/android/sdk
-
-    - name: Unlock Android WebView Audio Settings
-      run: |
-        MAIN_ACTIVITY=$(find cordova_app/platforms/android/app/src/main/java/ -name "MainActivity.java")
-        cat << 'EOF' > $MAIN_ACTIVITY
-        package com.myrunplay.mayumsyka2;
-
-        import android.os.Bundle;
-        import android.webkit.WebSettings;
-        import android.webkit.WebView;
-        import org.apache.cordova.*;
-
-        public class MainActivity extends CordovaActivity {
-            @Override
-            public void onCreate(Bundle savedInstanceState) {
-                super.onCreate(savedInstanceState);
-                
-                // Включаем встроенный запуск Cordova без лишних проверок, которые выдавали ошибку
-                loadUrl(launchUrl);
-                
-                // Снимаем блокировки звука в Android WebView
-                if (appView != null && appView.getEngine() != null) {
-                    WebView webView = (WebView) appView.getEngine().getView();
-                    WebSettings settings = webView.getSettings();
-                    settings.setMediaPlaybackRequiresUserGesture(false);
-                    settings.setDomStorageEnabled(true);
-                    settings.setJavaScriptEnabled(true);
-                }
-            }
-        }
-        EOF
 
     - name: Build Android Release APK
       run: |
