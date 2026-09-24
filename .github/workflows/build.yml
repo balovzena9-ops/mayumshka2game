@@ -1,4 +1,4 @@
-name: Build Android APK (Chapter 2 Pure HTML5 Audio Fix)
+name: Build Android APK (Chapter 2 Android Audio Fix)
 
 on:
   push:
@@ -31,9 +31,15 @@ jobs:
         cordova create cordova_app com.myrunplay.mayumsyka2 MayUmshka2
         rm -rf cordova_app/www/*
         cp -R www/* cordova_app/www/
+        
+        # Подставляем файлы конфигурации звука и безопасности
         if [ -f config.xml ]; then cp config.xml cordova_app/config.xml; fi
+        
         cd cordova_app
         cordova platform add android@13.0.0 --no-telemetry
+        
+        # Копируем gradle-настройки для разблокировки аудио в системную папку Android
+        if [ -f ../build-extras.gradle ]; then cp ../build-extras.gradle platforms/android/app/build-extras.gradle; fi
       env:
         ANDROID_HOME: /usr/local/lib/android/sdk
 
@@ -48,7 +54,6 @@ jobs:
       run: |
         keytool -genkey -v -keystore my-release-key.jks -alias game_alias -keyalg RSA -keysize 2048 -validity 10000 -storepass mysecretpassword123 -keypass mysecretpassword123 -dname "CN=MayUmshka2, O=Developer, C=RU"
         
-        # Исправленный поиск: ищет ЛЮБОЙ скомпилированный релизный APK-файл на всем сервере!
         ORIGINAL_APK=$(find . -name "*release-unsigned.apk" -o -name "*release.apk" | head -n 1)
         echo "Found generated APK at: $ORIGINAL_APK"
         
