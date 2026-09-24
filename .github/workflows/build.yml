@@ -1,4 +1,4 @@
-name: Build Android APK (Chapter 2 Pure Sound Fix)
+name: Build Android APK (Chapter 2 Build Fix)
 
 on:
   push:
@@ -17,11 +17,11 @@ jobs:
       with:
         node-version: '24'
 
-    - name: Set up JDK 17
+    - name: Set up JDK 21
       uses: actions/setup-java@v4
       with:
         distribution: 'zulu'
-        java-version: '17'
+        java-version: '21' # Обновили Java до 21 для совместимости с Gradle
 
     - name: Install Cordova
       run: npm install -g cordova
@@ -32,16 +32,14 @@ jobs:
         rm -rf cordova_app/www/*
         cp -R www/* cordova_app/www/
         cd cordova_app
-        cordova platform add android --no-telemetry
+        # Принудительно ставим самую стабильную версию платформы Android
+        cordova platform add android@13.0.0 --no-telemetry
       env:
         ANDROID_HOME: /usr/local/lib/android/sdk
 
     - name: Unlock Android WebView Audio Settings
       run: |
-        # Сервер сам находит главный системный Java-файл приложения
         MAIN_ACTIVITY=$(find cordova_app/platforms/android/app/src/main/java/ -name "MainActivity.java")
-        
-        # Переписываем его внутренности, чтобы Android WebView перестал блокировать тег new Audio()
         cat << 'EOF' > $MAIN_ACTIVITY
         package com.myrunplay.mayumsyka2;
 
@@ -57,8 +55,6 @@ jobs:
                 if (customConfig == null) {
                     loadUrl(launchUrl);
                 }
-                
-                // Главная магия: отключаем встроенную блокировку звуков в Android!
                 if (appView != null && appView.getEngine() != null) {
                     WebView webView = (WebView) appView.getEngine().getView();
                     WebSettings settings = webView.getSettings();
@@ -80,7 +76,8 @@ jobs:
     - name: Optimize and Sign APK via apksigner (V2/V3)
       run: |
         keytool -genkey -v -keystore my-release-key.jks -alias game_alias -keyalg RSA -keysize 2048 -validity 10000 -storepass mysecretpassword123 -keypass mysecretpassword123 -dname "CN=MayUmshka2, O=Developer, C=RU"
-        APK_PATH=$(find cordova_app/platforms/android/app/build/outputs/apk/ -name "*release*.apk" | head -n 1)
+        
+        ORIGINAL_APK=$(find cordova_app/platforms/android/app/build/outputs/apk/ -name "*release*.apk" | head -n 1)
         ZIPALIGN_PATH=$(find /usr/local/lib/android/sdk/build-tools/ -name "zipalign" | sort -V | tail -n 1)
         APKSIGNER_PATH=$(find /usr/local/lib/android/sdk/build-tools/ -name "apksigner" | sort -V | tail -n 1)
         
