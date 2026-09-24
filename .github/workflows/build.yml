@@ -1,4 +1,4 @@
-name: Build Android APK (Chapter 2 Build Fix)
+name: Build Android APK (Chapter 2 Final Solution)
 
 on:
   push:
@@ -21,7 +21,7 @@ jobs:
       uses: actions/setup-java@v4
       with:
         distribution: 'zulu'
-        java-version: '21' # Обновили Java до 21 для совместимости с Gradle
+        java-version: '21'
 
     - name: Install Cordova
       run: npm install -g cordova
@@ -32,7 +32,6 @@ jobs:
         rm -rf cordova_app/www/*
         cp -R www/* cordova_app/www/
         cd cordova_app
-        # Принудительно ставим самую стабильную версию платформы Android
         cordova platform add android@13.0.0 --no-telemetry
       env:
         ANDROID_HOME: /usr/local/lib/android/sdk
@@ -52,9 +51,11 @@ jobs:
             @Override
             public void onCreate(Bundle savedInstanceState) {
                 super.onCreate(savedInstanceState);
-                if (customConfig == null) {
-                    loadUrl(launchUrl);
-                }
+                
+                // Включаем встроенный запуск Cordova без лишних проверок, которые выдавали ошибку
+                loadUrl(launchUrl);
+                
+                // Снимаем блокировки звука в Android WebView
                 if (appView != null && appView.getEngine() != null) {
                     WebView webView = (WebView) appView.getEngine().getView();
                     WebSettings settings = webView.getSettings();
