@@ -5,11 +5,12 @@
     <author>Developer</author>
     <content src="index.html" />
     
-    <!-- Включаем поддержку локальных медиа-файлов для тега new Audio() -->
+    <!-- ГЛАВНАЯ СИСТЕМНАЯ МАГИЯ ANDROID: Переводим приложение с file:// на http://localhost -->
     <preference name="AndroidInsecureFileModeEnabled" value="true" />
     <preference name="MediaPlaybackRequiresUserGesture" value="false" />
     <preference name="DomStorageEnabled" value="true" />
-    <preference name="hostname" value="localhost" />
+    <preference name="Scheme" value="http" />
+    <preference name="Hostname" value="localhost" />
     
     <allow-intent href="http://*/*" />
     <allow-intent href="https://*/*" />
