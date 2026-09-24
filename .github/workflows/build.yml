@@ -1,0 +1,94 @@
+name: Build Android APK (Chapter 2 Pure Sound Fix)
+
+on:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Source Code
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '24'
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'zulu'
+        java-version: '17'
+
+    - name: Install Cordova
+      run: npm install -g cordova
+
+    - name: Create Cordova Project
+      run: |
+        cordova create cordova_app com.myrunplay.mayumsyka2 MayUmshka2
+        rm -rf cordova_app/www/*
+        cp -R www/* cordova_app/www/
+        cd cordova_app
+        cordova platform add android --no-telemetry
+      env:
+        ANDROID_HOME: /usr/local/lib/android/sdk
+
+    - name: Unlock Android WebView Audio Settings
+      run: |
+        # Сервер сам находит главный системный Java-файл приложения
+        MAIN_ACTIVITY=$(find cordova_app/platforms/android/app/src/main/java/ -name "MainActivity.java")
+        
+        # Переписываем его внутренности, чтобы Android WebView перестал блокировать тег new Audio()
+        cat << 'EOF' > $MAIN_ACTIVITY
+        package com.myrunplay.mayumsyka2;
+
+        import android.os.Bundle;
+        import android.webkit.WebSettings;
+        import android.webkit.WebView;
+        import org.apache.cordova.*;
+
+        public class MainActivity extends CordovaActivity {
+            @Override
+            public void onCreate(Bundle savedInstanceState) {
+                super.onCreate(savedInstanceState);
+                if (customConfig == null) {
+                    loadUrl(launchUrl);
+                }
+                
+                // Главная магия: отключаем встроенную блокировку звуков в Android!
+                if (appView != null && appView.getEngine() != null) {
+                    WebView webView = (WebView) appView.getEngine().getView();
+                    WebSettings settings = webView.getSettings();
+                    settings.setMediaPlaybackRequiresUserGesture(false);
+                    settings.setDomStorageEnabled(true);
+                    settings.setJavaScriptEnabled(true);
+                }
+            }
+        }
+        EOF
+
+    - name: Build Android Release APK
+      run: |
+        cd cordova_app
+        cordova build android --release --no-telemetry -- --packageType=apk --versionCode=2 --versionName=2.0.0
+      env:
+        ANDROID_HOME: /usr/local/lib/android/sdk
+
+    - name: Optimize and Sign APK via apksigner (V2/V3)
+      run: |
+        keytool -genkey -v -keystore my-release-key.jks -alias game_alias -keyalg RSA -keysize 2048 -validity 10000 -storepass mysecretpassword123 -keypass mysecretpassword123 -dname "CN=MayUmshka2, O=Developer, C=RU"
+        APK_PATH=$(find cordova_app/platforms/android/app/build/outputs/apk/ -name "*release*.apk" | head -n 1)
+        ZIPALIGN_PATH=$(find /usr/local/lib/android/sdk/build-tools/ -name "zipalign" | sort -V | tail -n 1)
+        APKSIGNER_PATH=$(find /usr/local/lib/android/sdk/build-tools/ -name "apksigner" | sort -V | tail -n 1)
+        
+        $ZIPALIGN_PATH -v 4 $ORIGINAL_APK ./aligned.apk
+        $APKSIGNER_PATH sign --ks my-release-key.jks --ks-key-alias game_alias --ks-pass pass:mysecretpassword123 --key-pass pass:mysecretpassword123 --out ./MayUmshka2_Final.apk ./aligned.apk
+
+    - name: Upload Finished Signed APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: RuStore-Ready-APK
+        path: MayUmshka2_Final.apk
