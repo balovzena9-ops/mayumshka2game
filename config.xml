@@ -1,0 +1,14 @@
+<?xml id="com.myrunplay.mayumsyka2" version="2.0.0" xmlns="http://w3.org" xmlns:cdv="http://apache.org">
+    <name>MayUmshka2</name>
+    <description>MayUmshka Chapter 2</description>
+    <author>Developer</author>
+    <content src="index.html" />
+    
+    <!-- Главная магия: включаем локальный сервер, чтобы заработал тег new Audio() -->
+    <preference name="AndroidInsecureFileModeEnabled" value="true" />
+    <preference name="MediaPlaybackRequiresUserGesture" value="false" />
+    <preference name="DomStorageEnabled" value="true" />
+    
+    <allow-intent href="http://*/*" />
+    <allow-intent href="https://*/*" />
+</widget>
