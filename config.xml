@@ -5,10 +5,11 @@
     <author>Developer</author>
     <content src="index.html" />
     
-    <!-- Разрешаем локальный запуск медиафайлов без ограничений WebView -->
+    <!-- Включаем поддержку локальных медиа-файлов для тега new Audio() -->
     <preference name="AndroidInsecureFileModeEnabled" value="true" />
     <preference name="MediaPlaybackRequiresUserGesture" value="false" />
     <preference name="DomStorageEnabled" value="true" />
+    <preference name="hostname" value="localhost" />
     
     <allow-intent href="http://*/*" />
     <allow-intent href="https://*/*" />
